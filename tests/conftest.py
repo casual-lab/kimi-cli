@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import platform
 import tempfile
+import uuid
 from collections.abc import Generator
 from contextlib import contextmanager
 from pathlib import Path
@@ -82,6 +83,17 @@ def temp_share_dir() -> Generator[Path]:
     """Create a temporary shared directory for tests."""
     with tempfile.TemporaryDirectory() as tmpdir:
         yield Path(tmpdir)
+
+
+@pytest.fixture
+def artifact_dir() -> Path:
+    """Provide a persistent per-test directory under the repository for artefacts."""
+
+    root = Path(__file__).resolve().parent.parent / "test_artifacts"
+    root.mkdir(parents=True, exist_ok=True)
+    target = root / f"run_{uuid.uuid4().hex}"
+    target.mkdir(parents=True, exist_ok=True)
+    return target
 
 
 @pytest.fixture

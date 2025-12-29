@@ -28,8 +28,8 @@ def test_private_sequence_handler_suppresses_private_sequences() -> None:
     assert "osc-suppressed" in kinds
 
 
-def test_replay_parser_and_keyframe_extraction(tmp_path: Path) -> None:
-    output_dir = tmp_path / "session"
+def test_replay_parser_and_keyframe_extraction(artifact_dir: Path) -> None:
+    output_dir = artifact_dir / "session"
     config = ScriptConfig(
         command=["/bin/sh"],
         steps=[

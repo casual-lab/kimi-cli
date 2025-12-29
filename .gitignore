@@ -24,6 +24,8 @@ src/kimi_cli/deps/tmp
 # Generated reports
 tests_ai/report.json
 
+test_artifacts/
+
 # nix build result
 result
 result-*

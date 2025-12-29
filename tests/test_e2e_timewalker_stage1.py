@@ -14,8 +14,9 @@ from kimi_cli.e2e_timewalker import (
 )
 
 
-def test_recorder_tracks_offsets(tmp_path: Path) -> None:
-    file_path = tmp_path / "ansi.bin"
+def test_recorder_tracks_offsets(artifact_dir: Path) -> None:
+    file_path = artifact_dir / "ansi.bin"
+    file_path.parent.mkdir(parents=True, exist_ok=True)
     recorder = AnsiStreamRecorder(file_path)
     try:
         assert recorder.append(b"hello") == 5
@@ -26,12 +27,13 @@ def test_recorder_tracks_offsets(tmp_path: Path) -> None:
     assert file_path.read_bytes() == b"hello world"
 
 
-def test_keyframe_registry_marks_positions(tmp_path: Path) -> None:
-    file_path = tmp_path / "ansi.bin"
+def test_keyframe_registry_marks_positions(artifact_dir: Path) -> None:
+    file_path = artifact_dir / "ansi.bin"
+    file_path.parent.mkdir(parents=True, exist_ok=True)
     recorder = AnsiStreamRecorder(file_path)
     try:
         recorder.append(b"first line\n")
-        registry = KeyframeRegistry(recorder, tmp_path / "keyframes.json")
+        registry = KeyframeRegistry(recorder, artifact_dir / "keyframes.json")
         first = registry.mark("start")
         recorder.append(b"second line\n")
         second = registry.mark("after-second")
@@ -42,12 +44,13 @@ def test_keyframe_registry_marks_positions(tmp_path: Path) -> None:
     assert first.offset == len(b"first line\n")
     assert second.offset == len(b"first line\nsecond line\n")
 
-    payload = (tmp_path / "keyframes.json").read_text(encoding="utf-8")
+    payload = (artifact_dir / "keyframes.json").read_text(encoding="utf-8")
     assert "start" in payload and "after-second" in payload
 
 
-def test_script_driver_runs_interactive_shell(tmp_path: Path) -> None:
-    output_dir = tmp_path / "session"
+def test_script_driver_runs_interactive_shell(artifact_dir: Path) -> None:
+    output_dir = artifact_dir / "session"
+    output_dir.mkdir(parents=True, exist_ok=True)
     config = ScriptConfig(
         command=["/bin/sh"],
         steps=[

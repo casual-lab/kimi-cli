@@ -42,9 +42,9 @@ def simple_scenario() -> dict:
     }
 
 
-def test_build_script_config_from_scenario(simple_scenario: dict, tmp_path: Path) -> None:
+def test_build_script_config_from_scenario(simple_scenario: dict, artifact_dir: Path) -> None:
     scenario = load_scenario(simple_scenario)
-    config = build_script_config(scenario, output_dir=tmp_path / "run")
+    config = build_script_config(scenario, output_dir=artifact_dir / "run")
 
     assert isinstance(config.steps[0], InputStep)
     assert isinstance(config.steps[1], WaitStep)
@@ -54,9 +54,9 @@ def test_build_script_config_from_scenario(simple_scenario: dict, tmp_path: Path
     assert config.steps[0].expect and config.steps[0].expect.contains == "dsl"
 
 
-def test_orchestrator_runs_scenario(simple_scenario: dict, tmp_path: Path) -> None:
+def test_orchestrator_runs_scenario(simple_scenario: dict, artifact_dir: Path) -> None:
     orchestrator = ExecutionOrchestrator(driver=ScriptDriver())
-    result = orchestrator.execute(simple_scenario, output_dir=tmp_path / "orchestrated")
+    result = orchestrator.execute(simple_scenario, output_dir=artifact_dir / "orchestrated")
 
     assert result.artifacts.exit_status == 0
     assert any(frame.label == "after-command" for frame in result.artifacts.keyframes)
