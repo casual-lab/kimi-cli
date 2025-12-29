@@ -62,6 +62,92 @@
 
 ---
 
+## 实现进度
+
+### 阶段一：采集与录制
+
+| 模块 | 职责 |
+| --- | --- |
+| `pty_runner.py` | 在 PTY 中启动命令、调整窗口大小并返回退出状态。|
+| `recording.py` | 持续写入 ANSI 字节流，维护关键帧注册表。|
+| `script.py` | 提供同步 `ScriptDriver`、步骤定义以及输出缓冲/断言能力。|
+
+```python
+from pathlib import Path
+from kimi_cli.e2e_timewalker import (
+    InputStep,
+    OutputCondition,
+    ScriptConfig,
+    ScriptDriver,
+)
+
+config = ScriptConfig(
+    command=["/bin/sh"],
+    steps=[
+        InputStep(
+            payload="printf 'hello world'",
+            mark="after-print",
+            expect=OutputCondition(contains="hello world"),
+        ),
+        InputStep(payload="exit"),
+    ],
+    output_dir=Path("./outputs/demo"),
+)
+
+artifacts = ScriptDriver().run(config)
+print(artifacts.exit_status, artifacts.ansi_path)
+```
+
+测试入口：`tests/test_e2e_timewalker_stage1.py`。
+
+### 阶段二：重放与渲染
+
+| 模块 | 职责 |
+| --- | --- |
+| `replay.py` | 解析 ANSI 流、处理私有序列、生成虚拟终端快照。|
+| `replay.py::HtmlRenderer` | 将屏幕状态渲染为独立 HTML，保留颜色与光标信息。|
+| `replay.py::ImageExporter` | 借助 Pillow 导出 PNG 快照，便于快速对比。|
+
+```python
+from pathlib import Path
+from kimi_cli.e2e_timewalker import AnsiReplayParser, HtmlRenderer, extract_keyframes
+
+result = AnsiReplayParser().parse(artifacts.ansi_path)
+frames = extract_keyframes(result.states, artifacts.keyframes)
+HtmlRenderer().render(frames["after-print"], Path("./outputs/demo/frame.html"))
+```
+
+测试入口：`tests/test_e2e_timewalker_stage2.py`。
+
+### 阶段三：DSL 与调度
+
+| 模块 | 职责 |
+| --- | --- |
+| `dsl/schema.py` | 提供 JSON Schema 与校验工具。|
+| `dsl/model.py` / `dsl/planner.py` | 解析 DSL、生成 `ScriptConfig` 执行计划。|
+| `orchestrator.py` | 高层封装 `ExecutionOrchestrator`，串联 DSL → 会话执行。|
+
+```python
+from pathlib import Path
+from kimi_cli.e2e_timewalker import ExecutionOrchestrator
+
+scenario = {
+    "meta": {"command": ["/bin/sh"], "id": "demo"},
+    "steps": [
+        {"type": "command", "run": "printf 'dsl'", "mark": "dsl"},
+        {"type": "snapshot", "label": "dsl"},
+        {"type": "command", "run": "exit"},
+    ],
+}
+
+result = ExecutionOrchestrator().execute(scenario, output_dir=Path("./outputs/dsl"))
+print(result.artifacts.exit_status, result.artifacts.ansi_path)
+```
+
+测试入口：`tests/test_e2e_timewalker_stage3.py`。
+
+---
+
 ## JSON 场景 DSL（草案）
 
 ```json

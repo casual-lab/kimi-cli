@@ -62,6 +62,92 @@ Think of it as a time-travel recorder for agent sessions: you can jump back to a
 
 ---
 
+## Implementation status
+
+### Stage 1 – Capture & Recording
+
+| Module | Description |
+| --- | --- |
+| `pty_runner.py` | Launch commands inside a PTY, manage window size, surface exit statuses. |
+| `recording.py` | Stream raw ANSI bytes to disk and keep keyframe registries in sync. |
+| `script.py` | Provide a synchronous `ScriptDriver`, step definitions, and buffered output inspection helpers. |
+
+```python
+from pathlib import Path
+from kimi_cli.e2e_timewalker import (
+    InputStep,
+    OutputCondition,
+    ScriptConfig,
+    ScriptDriver,
+)
+
+config = ScriptConfig(
+    command=["/bin/sh"],
+    steps=[
+        InputStep(
+            payload="printf 'hello world'",
+            mark="after-print",
+            expect=OutputCondition(contains="hello world"),
+        ),
+        InputStep(payload="exit"),
+    ],
+    output_dir=Path("./outputs/demo"),
+)
+
+artifacts = ScriptDriver().run(config)
+print(artifacts.exit_status, artifacts.ansi_path)
+```
+
+Tests: `tests/test_e2e_timewalker_stage1.py`.
+
+### Stage 2 – Replay & Rendering
+
+| Module | Description |
+| --- | --- |
+| `replay.py` | Normalize private sequences, drive a virtual terminal, and snapshot screen states. |
+| `replay.py::HtmlRenderer` | Render captured frames to standalone HTML (with cursor & colour support). |
+| `replay.py::ImageExporter` | Export frames to PNG using Pillow for quick visual diffs. |
+
+```python
+from pathlib import Path
+from kimi_cli.e2e_timewalker import AnsiReplayParser, HtmlRenderer, extract_keyframes
+
+result = AnsiReplayParser().parse(artifacts.ansi_path)
+frames = extract_keyframes(result.states, artifacts.keyframes)
+HtmlRenderer().render(frames["after-print"], Path("./outputs/demo/frame.html"))
+```
+
+Tests: `tests/test_e2e_timewalker_stage2.py`.
+
+### Stage 3 – DSL & Orchestration
+
+| Module | Description |
+| --- | --- |
+| `dsl/schema.py` | JSON Schema + validation helpers for the scenario DSL. |
+| `dsl/model.py` / `dsl/planner.py` | Parse DSL payloads and translate them into `ScriptConfig` plans. |
+| `orchestrator.py` | High-level `ExecutionOrchestrator` that runs scenarios end-to-end. |
+
+```python
+from pathlib import Path
+from kimi_cli.e2e_timewalker import ExecutionOrchestrator
+
+scenario = {
+    "meta": {"command": ["/bin/sh"], "id": "demo"},
+    "steps": [
+        {"type": "command", "run": "printf 'dsl'", "mark": "dsl"},
+        {"type": "snapshot", "label": "dsl"},
+        {"type": "command", "run": "exit"},
+    ],
+}
+
+result = ExecutionOrchestrator().execute(scenario, output_dir=Path("./outputs/dsl"))
+print(result.artifacts.exit_status, result.artifacts.ansi_path)
+```
+
+Tests: `tests/test_e2e_timewalker_stage3.py`.
+
+---
+
 ## JSON scenario DSL (draft)
 
 ```json

@@ -24,6 +24,8 @@ dependencies = [
     "httpx[socks]==0.28.1",
     "pykaos==0.5.2",
     "tomlkit==0.13.3",
+    "pyte==0.8.2",
+    "jsonschema==4.25.1",
 ]
 
 [dependency-groups]
