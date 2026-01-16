@@ -12,6 +12,7 @@ Only write entries that are worth mentioning to users.
 ## Unreleased
 
 - Shell: Use `/model` to toggle thinking mode instead of Tab key
+- Shell: Fix context being lost when switching models via `/model` command
 - Config: Add `default_thinking` config option (auto-migrated from metadata)
 - LLM: Add `always_thinking` capability for models that always use thinking mode
 - CLI: Rename `--command`/`-c` to `--prompt`/`-p`, keep `--command`/`-c` as alias, remove `--query`/`-q`

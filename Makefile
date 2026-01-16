@@ -102,6 +102,15 @@ build-bin: ## Build the standalone executable with PyInstaller.
 	@echo "==> Building PyInstaller binary"
 	@uv run pyinstaller kimi.spec
 
+.PHONY: build-bin-onedir build-pkg
+build-bin-onedir: ## Build the onedir executable with PyInstaller.
+	@echo "==> Building PyInstaller onedir binary"
+	@uv run pyinstaller kimi_onedir.spec
+
+build-pkg: build-bin-onedir ## Build the macOS installer package.
+	@echo "==> Building macOS PKG"
+	@./scripts/build_macos_pkg.sh "$${VERSION}" "$${APPLE_SIGNING_IDENTITY}"
+
 .PHONY: ai-test
 ai-test: ## Run the test suite with Kimi CLI.
 	@echo "==> Running AI test suite"
