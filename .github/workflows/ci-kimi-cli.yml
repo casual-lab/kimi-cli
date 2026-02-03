@@ -38,7 +38,7 @@ jobs:
           - runner: macos-14
             target: aarch64-apple-darwin
             binary_path: dist/onefile/kimi
-          - runner: macos-13
+          - runner: macos-12
             target: x86_64-apple-darwin
             binary_path: dist/onefile/kimi
           - runner: windows-2022
@@ -214,7 +214,7 @@ jobs:
           - runner: macos-14
             target: aarch64-apple-darwin
             binary_path: dist/kimi
-          - runner: macos-13
+          - runner: macos-12
             target: x86_64-apple-darwin
             binary_path: dist/kimi
     runs-on: ${{ matrix.runner }}
